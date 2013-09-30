@@ -1,31 +1,59 @@
 import csv
 data_csv_file="GeneAssocaitionData.csv"
 gene_prefix="G"
+min_support=0.50
 
-def one_item_frequentSet(data_set):
+# get frequent itemset of 1 items
+def one_item_frequentSet(data_set,min_support):
 	item_count=dict()
+	item_set=set()
 	for row in data_set:
 		for item in row:
 			if item not in item_count:
 				item_count[item] = 1
 			else:
 				item_count[item] += 1
-	return item_count
+	for key in item_count.keys():
+		if (float(item_count[key])/9) >= min_support:
+			item_set.add(frozenset([key]))
 
-def apriori_algorithm(data_set):
-	# get frequent itemset of 1 items
-	C=list()
-	L=list()
-	C.append(one_item_frequentSet(data_set))
-	L.append(prune(C[0]))
+	return item_set
+
+def join(frequent_set1, frequent_set2,level):
+	candidate_set=set()
+	for itemset1 in frequent_set1:
+		for itemset2 in frequent_set2:
+			if len(itemset1.union(itemset2))==level:
+				candidate_set.add(itemset1.union(itemset2))
+	return candidate_set
+
+def prune(data_set, candidate_set,min_support):
+	pruned_set=set()
+	for item_set in candidate_set:
+		count=0
+		for row in data_set:
+			if item_set.issubset(row):
+				count+=1
+		if (float(count)/len(data_set)>=min_support):
+			pruned_set.add(item_set)
+	return pruned_set
+		
+	
+
+def apriori_algorithm(data_set, min_support):
+	
+	L=one_item_frequentSet(data_set,min_support)
 	k=1
+	temp_candidate_set=set()
+	temp_frequent_set=L
+	while temp_frequent_set != set([]):
+		temp_candidate_set=join(temp_frequent_set,temp_frequent_set,k)
+		temp_frequent_set=prune(data_set,temp_candidate_set,min_support)
+		L.update(temp_frequent_set)
+		print len(temp_frequent_set)
+		k=k+1	
 	
-	while not C[k-1]:
-		C[k].append(join(L[k-1],L[k-1]))
-		L[k].append(prune(C[k]))
-		k=k+1
-	
-	return C
+	return L
 
 
 
@@ -42,9 +70,11 @@ try:
 				modified_row.append(gene_prefix+str(colnum)+col)
 				colnum=colnum+1
 			modified_data.append(modified_row)
-		#print (modified_data)
-		#line=[['pratik','kathalkar','computer'],['computer','science','engineering'],['pratik','coep','engineering','and','science','college']]
-		print(len(one_item_frequentSet(modified_data)))
+		db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
+		print len(apriori_algorithm(modified_data,min_support))
+		#one_set=one_item_frequentSet(modified_data,min_support)
+		#print len(one_set)
+		#print len(prune(modified_data,join(one_set,one_set,2),min_support))
 	finally:
 		data_file.close()
 except IOError:
