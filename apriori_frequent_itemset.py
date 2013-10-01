@@ -1,4 +1,5 @@
 import csv
+import copy
 data_csv_file="GeneAssocaitionData.csv"
 gene_prefix="G"
 min_support=0.50
@@ -14,7 +15,7 @@ def one_item_frequentSet(data_set,min_support):
 			else:
 				item_count[item] += 1
 	for key in item_count.keys():
-		if (float(item_count[key])/9) >= min_support:
+		if (float(item_count[key])/len(data_set)) >= min_support:
 			item_set.add(frozenset([key]))
 
 	return item_set
@@ -50,12 +51,27 @@ def apriori_algorithm(data_set, min_support):
 		temp_candidate_set=join(temp_frequent_set,temp_frequent_set,k)
 		temp_frequent_set=prune(data_set,temp_candidate_set,min_support)
 		L.update(temp_frequent_set)
-		print len(temp_frequent_set)
 		k=k+1	
 	
 	return L
 
+def generate_all_subsets(elements,index):
+	all_subsets=[]
+	if(len(elements) == index):
+		all_subsets.append([])
+	else:
+		all_subsets=generate_all_subsets(elements,index+1)
+		item=elements[index]
+		temp_subsets=copy.deepcopy(all_subsets)
+		for tuples in temp_subsets:
+			tuples.append(item)
+		all_subsets.extend(temp_subsets)
+	return all_subsets
 
+def association_rules():
+	pass
+	# convert the frequent itemsets to list
+	
 
 # @task: add support for reading filename from commandline input
 try:
@@ -72,9 +88,9 @@ try:
 			modified_data.append(modified_row)
 		db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
 		print len(apriori_algorithm(modified_data,min_support))
-		#one_set=one_item_frequentSet(modified_data,min_support)
-		#print len(one_set)
-		#print len(prune(modified_data,join(one_set,one_set,2),min_support))
+		#temp=['l1','l2','l3']
+		#print (generate_all_subsets(temp,0))
+		
 	finally:
 		data_file.close()
 except IOError:
