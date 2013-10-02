@@ -108,11 +108,8 @@ def association_rules(data_set,all_frequent_item_set,min_confidence):
 			if len(rules)!=0:
 				association_rules.extend(rules)
 	return association_rules
-	
-# @task: add support for reading filename from commandline input
-try:
-	data_file=open(data_csv_file,"rU")
-	try:
+
+def read_from_file(data_file):
 		reader = csv.reader(data_file)
 		modified_data=[]
 		for row in reader:
@@ -122,21 +119,16 @@ try:
 				modified_row.append(gene_prefix+str(colnum)+col)
 				colnum=colnum+1
 			modified_data.append(modified_row)
-		#db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
-		#db=[['M', 'O', 'N', 'K', 'E', 'Y'],['D', 'O', 'N', 'K', 'E', 'Y'],['M', 'A', 'K', 'E'],['M', 'U', 'C', 'K', 'Y'],['C', 'O', 'K', 'I', 'E']]
-		db=modified_data
-		rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))
+		return modified_data
 
-		count=0
-		for head, body in rules:
-			print "Rule: %s ==> %s" % (str(head), str(body))
-			if 'G1UP' in head or 'G1UP' in body:
-				count+=1
-		print count
-		
-		
-	finally:
-		data_file.close()
+# @task: add support for reading filename from commandline input
+try:
+	data_file=open(data_csv_file,"rU")
+	#db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
+	#db=[['M', 'O', 'N', 'K', 'E', 'Y'],['D', 'O', 'N', 'K', 'E', 'Y'],['M', 'A', 'K', 'E'],['M', 'U', 'C', 'K', 'Y'],['C', 'O', 'K', 'I', 'E']]
+	db=read_from_file(data_file)
+	rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))	
+	print len(rules)	
 except IOError:
 	print('An error occured trying to read the file, file may not be present')
 
