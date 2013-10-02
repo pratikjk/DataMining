@@ -3,9 +3,11 @@ import copy
 data_csv_file="GeneAssocaitionData.csv"
 gene_prefix="G"
 min_support=0.50
+min_confidence=0.70
 
-# get frequent itemset of 1 items
+
 def one_item_frequentSet(data_set,min_support):
+	""" takes input the data_set and the min_support value to give SET of 1-item_frequent_set"""
 	item_count=dict()
 	item_set=set()
 	for row in data_set:
@@ -21,6 +23,7 @@ def one_item_frequentSet(data_set,min_support):
 	return item_set
 
 def join(frequent_set1, frequent_set2,level):
+	""" given two sets and level value, compute all the joins of set1 and set2 of length == level"""
 	candidate_set=set()
 	for itemset1 in frequent_set1:
 		for itemset2 in frequent_set2:
@@ -29,10 +32,12 @@ def join(frequent_set1, frequent_set2,level):
 	return candidate_set
 
 def prune(data_set, candidate_set,min_support):
+	""" given the entire data_set and the current candidate_set of frequent_items, prune all those items with support less than min_support"""
 	pruned_set=set()
 	for item_set in candidate_set:
 		count=0
 		for row in data_set:
+			# row is being treated as set here, dunno why
 			if item_set.issubset(row):
 				count+=1
 		if (float(count)/len(data_set)>=min_support):
@@ -41,8 +46,8 @@ def prune(data_set, candidate_set,min_support):
 		
 	
 
-def apriori_algorithm(data_set, min_support):
-	
+def apriori_algorithm(data_set, min_support):	
+	""" given the data_set and the min_support value, find all the frequent items in the dataset """
 	L=one_item_frequentSet(data_set,min_support)
 	k=1
 	temp_candidate_set=set()
@@ -52,7 +57,7 @@ def apriori_algorithm(data_set, min_support):
 		temp_frequent_set=prune(data_set,temp_candidate_set,min_support)
 		L.update(temp_frequent_set)
 		k=k+1	
-	
+	#print len(L)
 	return L
 
 def generate_all_subsets(elements,index):
@@ -68,11 +73,42 @@ def generate_all_subsets(elements,index):
 		all_subsets.extend(temp_subsets)
 	return all_subsets
 
-def association_rules():
-	pass
-	# convert the frequent itemsets to list
-	
+def prune_for_confidence(data_set, all_subsets, item_set, min_confidence):
+	rules=[]
+	item_set=set(item_set)
+	for subset in all_subsets:
+		if len(subset) > 0 and len(subset) < len(item_set):
+			subset=set(subset)
+			count_head=0
+			count_body=0
+			body=set(item_set)-set(subset)
+			for row in data_set:
+				if item_set.issubset(row):
+					count_head+=1
+				if subset.issubset(row):
+					count_body+=1
+			if (float(count_head)/float(count_body)) >= min_confidence:
+				rule=(tuple(subset),tuple(body))
+				rules.append(rule)
+	return rules
 
+def association_rules(data_set,all_frequent_item_set,min_confidence):
+	# convert the frequent itemsets to list
+	temp_set=list(all_frequent_item_set)
+	all_frequent_item_list=[]
+	for item in temp_set:
+    	    all_frequent_item_list.append(list(item))
+	
+	#print len(all_frequent_item_list)
+	#calculate the association rules given the frequent_item_sets
+	association_rules=[]
+	for item_set in all_frequent_item_list:
+			all_subsets=generate_all_subsets(item_set,0)
+			rules=prune_for_confidence(data_set,all_subsets,item_set,min_confidence)
+			if len(rules)!=0:
+				association_rules.extend(rules)
+	return association_rules
+	
 # @task: add support for reading filename from commandline input
 try:
 	data_file=open(data_csv_file,"rU")
@@ -86,10 +122,18 @@ try:
 				modified_row.append(gene_prefix+str(colnum)+col)
 				colnum=colnum+1
 			modified_data.append(modified_row)
-		db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
-		print len(apriori_algorithm(modified_data,min_support))
-		#temp=['l1','l2','l3']
-		#print (generate_all_subsets(temp,0))
+		#db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
+		#db=[['M', 'O', 'N', 'K', 'E', 'Y'],['D', 'O', 'N', 'K', 'E', 'Y'],['M', 'A', 'K', 'E'],['M', 'U', 'C', 'K', 'Y'],['C', 'O', 'K', 'I', 'E']]
+		db=modified_data
+		rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))
+
+		count=0
+		for head, body in rules:
+			print "Rule: %s ==> %s" % (str(head), str(body))
+			if 'G1UP' in head or 'G1UP' in body:
+				count+=1
+		print count
+		
 		
 	finally:
 		data_file.close()
