@@ -1,9 +1,9 @@
 """
 	Usage:
-	$python apriori.py -f DATASET.csv -s minSupport  -c minConfidence -t template
+	$python apriori_frequent_itemset.py -f DATASET.csv -s minSupport  -c minConfidence -t template
 	
 	Eg.
-		$ python apriori.py -f DATASET.csv -s 0.50 -c 0.70 -t "body has any of G6UP,G82Down,G72UP"
+		$ python apriori_frequent_itemset.py -f DATASET.csv -s 0.50 -c 0.70 -t "body has any of G6UP,G82Down,G72UP"
 
 """
 
@@ -11,6 +11,7 @@
 import csv
 import copy
 import itertools
+import re
 from optparse 	 import OptionParser
 
 #data_csv_file="GeneAssocaitionData.csv"
@@ -154,6 +155,7 @@ def template1(rules, template):
 	items= tokens[4].split(",")
 	
 	genes=[]
+	all_rules=[]
 	for item in items:
 			genes.append(item)
 			
@@ -161,12 +163,13 @@ def template1(rules, template):
 		body,head=rule
 		
 		if rule_position=="rule":	
-			#print 'searching in rule'	
 			if quantity=="any":
+	
  				combinations=kcombinations(genes,1)
  				for kcombi in combinations:
  					if set(kcombi).issubset(set(body)) or set(kcombi).issubset(set(head)):
  						print rule
+ 						all_rules.append(rule)
  						
  			elif quantity=="none":
  				is_none=True
@@ -179,12 +182,14 @@ def template1(rules, template):
  						break
  				if is_none:		
  						print rule
+ 						all_rules.append(rule)
 			else:
 				k = int(quantity)
  				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
  					if set(kcombi).issubset(set(body)) or set(kcombi).issubset(set(head)):
  						print rule
+ 						all_rules.append(rule)
 
 
 
@@ -195,6 +200,7 @@ def template1(rules, template):
  				for kcombi in combinations:
  					if set(kcombi).issubset(set(body)):
  						print rule
+ 						all_rules.append(rule)
  						
  			elif quantity=="none":
 	 			is_none=True
@@ -207,12 +213,14 @@ def template1(rules, template):
  						break
  				if is_none:		
  						print rule
+ 						all_rules.append(rule)
 			else:
 				k = int(quantity)
  				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
  					if set(kcombi).issubset(set(body)):
  						print rule
+ 						all_rules.append(rule)
 
  		
  		if rule_position=="head":
@@ -221,6 +229,7 @@ def template1(rules, template):
  				for kcombi in combinations:
  					if set(kcombi).issubset(set(head)):
  						print rule
+ 						all_rules.append(rule)
  						
  			elif quantity=="none":
  				is_none=True
@@ -233,6 +242,7 @@ def template1(rules, template):
  						break
  				if is_none:		
  						print rule
+ 						all_rules.append(rule)
 
 			else:
 				k = int(quantity)
@@ -241,19 +251,20 @@ def template1(rules, template):
  					#print kcombi, head
  					if set(kcombi).issubset(set(head)):
  						print rule
- 						
-
+ 						all_rules.append(rule)
+	
+	return all_rules
 
 
 def template2(rules, template):	
 	tokens=template.split(" ")
-	
 	sizeOfString=tokens[0]
 	startIndex=sizeOfString.find("(")
 	endIndex=sizeOfString.find(")")
 	
 	rule_position=sizeOfString[startIndex+1:endIndex]
 	quantity=tokens[2]
+	all_rules=[]
 	
 	for rule in rules:
 		body,head=rule
@@ -261,23 +272,36 @@ def template2(rules, template):
 			total_len = len(body)+len(head)
 			if total_len >= int(quantity):
 				print rule
+				all_rules.append(rule)
 		
 		if rule_position=="body":
 			if len(body)>=	int(quantity):
 				print rule
+				all_rules.append(rule)
 		
 		if rule_position=="head":
 			if len(head)>=	int(quantity):
 				print rule
-	
+				all_rules.append(rule)
+	return all_rules
 
+def template3(rules, template):
+		templates=re.split("and|or",template)
+		all_rules=[]
+		for i, temp in enumerate(templates):
+			gen_rules=rules_from_query(rules, temp.strip())
+			all_rules.extend(gen_rules)
+		
+		#and_or=re.search(r'and|or',template,re.M|re.I)
+		
+		
 def rules_from_query(rules, template):
 	if "has" in template and not "and" in template and not "or" in template and not "sizeof" in template:
-		template1(rules, template)
-	elif "sizeof" in template:
-		template2(rules, template)
+		return template1(rules, template)
+	elif "sizeof" in template and not "and" in template and not "or" in template:
+		return template2(rules, template)
 	else:
-		template3(rules, template)
+		return template3(rules, template)
  
 if __name__ == "__main__":
 
@@ -296,6 +320,7 @@ if __name__ == "__main__":
 	db=read_from_file(data_file)
 	rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))	
 	#line = "body has any of G6UP,G82Down,G72UP";
-	rules_from_query(rules, line)
+	all_rules=rules_from_query(rules, line)
+	#print_rules(all_rules)
 
 
