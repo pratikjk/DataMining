@@ -145,24 +145,30 @@ def rules_from_query(rules, template):
 	genes=[]
 	for item in items:
 			genes.append(item)
-	tuple_genes=tuple(genes)
-	
+		
 	for rule in rules:
 		if rule_position=="rule":	
-			print 'searching in rule'	
+			#print 'searching in rule'	
 			if quantity=="any":
- 				combinations=kcombinations(tuple_genes,1)
+ 				combinations=kcombinations(genes,1)
  				for kcombi in combinations:
  					if kcombi in rule:
  						print rule
+ 						break
  			elif quantity=="none":
- 				combinations=kcombinations(tuple_genes,1)
+ 				is_none=True
+ 				combinations=kcombinations(genes,1)
 				for kcombi in combinations:
  					if kcombi not in rule:
+ 						is_none=True
+ 					else:
+ 						is_none=False
+ 						break
+ 				if is_none:		
  						print rule
 			else:
 				k = int(quantity)
- 				combinations=kcombinations(tuple_genes,k)
+ 				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
  					if kcombi in rule:
  						print rule
@@ -171,43 +177,59 @@ def rules_from_query(rules, template):
 		body,head=rule
 		#print body, head
 	 	if rule_position=="body":
-	 		print 'searching in body'	
 			if quantity=="any":
- 				combinations=kcombinations(tuple_genes,1)
+ 				combinations=kcombinations(genes,1)
  				for kcombi in combinations:
  					if kcombi in body:
  						print rule
+ 						break
  			elif quantity=="none":
- 				combinations=kcombinations(tuple_genes,1)
+	 			is_none=True
+ 				combinations=kcombinations(genes,1)
 				for kcombi in combinations:
- 					if kcombi not in body:
+ 					if kcombi not in body or  kcombi != body:
+ 						is_none=True
+ 					else:
+ 						is_none=False
+ 						break
+ 				if is_none:		
  						print rule
 			else:
 				k = int(quantity)
- 				combinations=kcombinations(tuple_genes,k)
+ 				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
- 					if kcombi in body:
- 						print rule
- 		
- 		if rule_position=="head":
-	 		print 'searching in head'
-			if quantity=="any":
- 				combinations=kcombinations(tuple_genes,1)
- 				for kcombi in combinations:
- 					if kcombi in head:
- 						print rule
- 			elif quantity=="none":
- 				combinations=kcombinations(tuple_genes,1)
-				for kcombi in combinations:
- 					if kcombi not in head:
- 						print rule
-			else:
-				k = int(quantity)
- 				combinations=kcombinations(tuple_genes,k)
- 				for kcombi in combinations:
- 					if kcombi in head:
+ 					if kcombi in body or kcombi == body:
  						print rule
 
+ 		
+ 		if rule_position=="head":
+			if quantity=="any":
+ 				combinations=kcombinations(genes,1)
+ 				for kcombi in combinations:
+ 					if kcombi in head:
+ 						print rule
+ 						break
+ 			elif quantity=="none":
+ 				is_none=True
+ 				combinations=kcombinations(genes,1)
+				for kcombi in combinations:
+ 					if kcombi not in head or kcombi !=head :
+ 						is_none=True 						
+ 					else:
+ 						is_none=False
+ 						break
+ 				if is_none:		
+ 						print rule
+
+			else:
+				k = int(quantity)
+ 				combinations=kcombinations(genes,k)
+ 				for kcombi in combinations:
+ 					#print kcombi, head
+ 					if kcombi in head or kcombi == head:
+ 						print rule
+ 					
+ 						
 # @task: add support for reading filename from commandline input
 try:
 	data_file=open(data_csv_file,"rU")
@@ -215,10 +237,15 @@ try:
 	#db=[['M', 'O', 'N', 'K', 'E', 'Y'],['D', 'O', 'N', 'K', 'E', 'Y'],['M', 'A', 'K', 'E'],['M', 'U', 'C', 'K', 'Y'],['C', 'O', 'K', 'I', 'E']]
 	db=read_from_file(data_file)
 	rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))	
+	#print rules
 	#print_rules(rules)
-	line = "head has 1 of G10Down,G72UP";
-	rules_from_query(rules, line)
-	#kcombinations(('G72UP','G59UP','G96Down'),2)
+	line = "rule has none of G10Down,G72UP";
+	#rules_from_query(rules, line)
+	# k=kcombinations(['G72UP','G59UP','G96Down','G1UP'],3)
+# 	t='G72UP'
+# 	for kc in k:
+# 		if t in kc:
+# 			print 'true'
 except IOError:
 	print('An error occured trying to read the file, file may not be present')
 
