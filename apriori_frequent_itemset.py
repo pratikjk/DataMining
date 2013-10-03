@@ -1,11 +1,22 @@
+"""
+	Usage:
+	$python apriori.py -f DATASET.csv -s minSupport  -c minConfidence -t template
+	
+	Eg.
+		$ python apriori.py -f DATASET.csv -s 0.50 -c 0.70 -t "body has any of G6UP,G82Down,G72UP"
+
+"""
+
+
 import csv
 import copy
 import itertools
+from optparse 	 import OptionParser
 
-data_csv_file="GeneAssocaitionData.csv"
+#data_csv_file="GeneAssocaitionData.csv"
 gene_prefix="G"
-min_support=0.50
-min_confidence=0.70
+#min_support=0.50
+#min_confidence=0.70
 
 
 def kcombinations(arr,k):
@@ -135,8 +146,8 @@ def print_rules(rules):
 	for rule in rules:
 			print "Rule: %s" % (str(rule))
 		
-def rules_from_query(rules, template):
-	
+
+def template1(rules, template):	
 	tokens=template.split(" ")
 	rule_position=tokens[0]
 	quantity=tokens[2]
@@ -145,21 +156,23 @@ def rules_from_query(rules, template):
 	genes=[]
 	for item in items:
 			genes.append(item)
+			
+	for rule in rules:	
+		body,head=rule
 		
-	for rule in rules:
 		if rule_position=="rule":	
 			#print 'searching in rule'	
 			if quantity=="any":
  				combinations=kcombinations(genes,1)
  				for kcombi in combinations:
- 					if kcombi in rule:
+ 					if set(kcombi).issubset(set(body)) or set(kcombi).issubset(set(head)):
  						print rule
- 						break
+ 						
  			elif quantity=="none":
  				is_none=True
  				combinations=kcombinations(genes,1)
 				for kcombi in combinations:
- 					if kcombi not in rule:
+ 					if not set(kcombi).issubset(set(body)) and set(kcombi).issubset(set(head)):
  						is_none=True
  					else:
  						is_none=False
@@ -170,24 +183,24 @@ def rules_from_query(rules, template):
 				k = int(quantity)
  				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
- 					if kcombi in rule:
+ 					if set(kcombi).issubset(set(body)) or set(kcombi).issubset(set(head)):
  						print rule
 
 
-		body,head=rule
+
 		#print body, head
 	 	if rule_position=="body":
 			if quantity=="any":
  				combinations=kcombinations(genes,1)
  				for kcombi in combinations:
- 					if kcombi in body:
+ 					if set(kcombi).issubset(set(body)):
  						print rule
- 						break
+ 						
  			elif quantity=="none":
 	 			is_none=True
  				combinations=kcombinations(genes,1)
 				for kcombi in combinations:
- 					if kcombi not in body or  kcombi != body:
+ 					if not set(kcombi).issubset(set(body)):
  						is_none=True
  					else:
  						is_none=False
@@ -198,7 +211,7 @@ def rules_from_query(rules, template):
 				k = int(quantity)
  				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
- 					if kcombi in body or kcombi == body:
+ 					if set(kcombi).issubset(set(body)):
  						print rule
 
  		
@@ -206,14 +219,14 @@ def rules_from_query(rules, template):
 			if quantity=="any":
  				combinations=kcombinations(genes,1)
  				for kcombi in combinations:
- 					if kcombi in head:
+ 					if set(kcombi).issubset(set(head)):
  						print rule
- 						break
+ 						
  			elif quantity=="none":
  				is_none=True
  				combinations=kcombinations(genes,1)
 				for kcombi in combinations:
- 					if kcombi not in head or kcombi !=head :
+ 					if not set(kcombi).issubset(set(head)) :
  						is_none=True 						
  					else:
  						is_none=False
@@ -226,28 +239,63 @@ def rules_from_query(rules, template):
  				combinations=kcombinations(genes,k)
  				for kcombi in combinations:
  					#print kcombi, head
- 					if kcombi in head or kcombi == head:
+ 					if set(kcombi).issubset(set(head)):
  						print rule
- 					
  						
-# @task: add support for reading filename from commandline input
-try:
-	data_file=open(data_csv_file,"rU")
-	#db=[['l1','l2','l5'],['l2','l4'],['l2','l3'],['l1','l2','l4'],['l1','l3'],['l2','l3'],['l1','l3'],['l1','l2','l3','l5'],['l1','l2','l3']]
-	#db=[['M', 'O', 'N', 'K', 'E', 'Y'],['D', 'O', 'N', 'K', 'E', 'Y'],['M', 'A', 'K', 'E'],['M', 'U', 'C', 'K', 'Y'],['C', 'O', 'K', 'I', 'E']]
+
+
+
+def template2(rules, template):	
+	tokens=template.split(" ")
+	
+	sizeOfString=tokens[0]
+	startIndex=sizeOfString.find("(")
+	endIndex=sizeOfString.find(")")
+	
+	rule_position=sizeOfString[startIndex+1:endIndex]
+	quantity=tokens[2]
+	
+	for rule in rules:
+		body,head=rule
+		if rule_position=="rule":
+			total_len = len(body)+len(head)
+			if total_len >= int(quantity):
+				print rule
+		
+		if rule_position=="body":
+			if len(body)>=	int(quantity):
+				print rule
+		
+		if rule_position=="head":
+			if len(head)>=	int(quantity):
+				print rule
+	
+
+def rules_from_query(rules, template):
+	if "has" in template and not "and" in template and not "or" in template and not "sizeof" in template:
+		template1(rules, template)
+	elif "sizeof" in template:
+		template2(rules, template)
+	else:
+		template3(rules, template)
+ 
+if __name__ == "__main__":
+
+	optparser = OptionParser()
+	optparser.add_option('-f', '--inputFile', dest = 'input', help = 'the filename which contains the comma separated values', default="GeneAssocaitionData.csv")
+	optparser.add_option('-s', '--minSupport', dest='minS', help = 'minimum support value', default=0.50, type='float')
+	optparser.add_option('-c','--minConfidence', dest='minC', help = 'minimum confidence value', default = 0.70, type='float')
+	optparser.add_option('-t', '--template', dest = 'template', help = "template to be given in single quotes '....', the genes should be only comma seperated no space allowed", default="body has any of G6UP,G82Down,G72UP")
+	
+	(options, args) = optparser.parse_args()
+
+	min_support		= options.minS
+	min_confidence 	= options.minC				    		
+	data_file=open(options.input,"rU")
+	line=options.template
 	db=read_from_file(data_file)
 	rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))	
-	#print rules
-	#print_rules(rules)
-	line = "rule has none of G10Down,G72UP";
-	#rules_from_query(rules, line)
-	# k=kcombinations(['G72UP','G59UP','G96Down','G1UP'],3)
-# 	t='G72UP'
-# 	for kc in k:
-# 		if t in kc:
-# 			print 'true'
-except IOError:
-	print('An error occured trying to read the file, file may not be present')
-
+	#line = "body has any of G6UP,G82Down,G72UP";
+	rules_from_query(rules, line)
 
 
