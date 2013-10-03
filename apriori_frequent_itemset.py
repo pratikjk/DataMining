@@ -1,9 +1,19 @@
 import csv
 import copy
+import itertools
+
 data_csv_file="GeneAssocaitionData.csv"
 gene_prefix="G"
 min_support=0.50
 min_confidence=0.70
+
+
+def kcombinations(arr,k):
+    """ Returns non empty k combinations of arr"""
+    subsets=[]
+    for combination in itertools.combinations(arr,k):
+    	subsets.append(combination)
+    return subsets
 
 
 def one_item_frequentSet(data_set,min_support):
@@ -121,6 +131,83 @@ def read_from_file(data_file):
 			modified_data.append(modified_row)
 		return modified_data
 
+def print_rules(rules):
+	for rule in rules:
+			print "Rule: %s" % (str(rule))
+		
+def rules_from_query(rules, template):
+	
+	tokens=template.split(" ")
+	rule_position=tokens[0]
+	quantity=tokens[2]
+	items= tokens[4].split(",")
+	
+	genes=[]
+	for item in items:
+			genes.append(item)
+	tuple_genes=tuple(genes)
+	
+	for rule in rules:
+		if rule_position=="rule":	
+			print 'searching in rule'	
+			if quantity=="any":
+ 				combinations=kcombinations(tuple_genes,1)
+ 				for kcombi in combinations:
+ 					if kcombi in rule:
+ 						print rule
+ 			elif quantity=="none":
+ 				combinations=kcombinations(tuple_genes,1)
+				for kcombi in combinations:
+ 					if kcombi not in rule:
+ 						print rule
+			else:
+				k = int(quantity)
+ 				combinations=kcombinations(tuple_genes,k)
+ 				for kcombi in combinations:
+ 					if kcombi in rule:
+ 						print rule
+
+
+		body,head=rule
+		#print body, head
+	 	if rule_position=="body":
+	 		print 'searching in body'	
+			if quantity=="any":
+ 				combinations=kcombinations(tuple_genes,1)
+ 				for kcombi in combinations:
+ 					if kcombi in body:
+ 						print rule
+ 			elif quantity=="none":
+ 				combinations=kcombinations(tuple_genes,1)
+				for kcombi in combinations:
+ 					if kcombi not in body:
+ 						print rule
+			else:
+				k = int(quantity)
+ 				combinations=kcombinations(tuple_genes,k)
+ 				for kcombi in combinations:
+ 					if kcombi in body:
+ 						print rule
+ 		
+ 		if rule_position=="head":
+	 		print 'searching in head'
+			if quantity=="any":
+ 				combinations=kcombinations(tuple_genes,1)
+ 				for kcombi in combinations:
+ 					if kcombi in head:
+ 						print rule
+ 			elif quantity=="none":
+ 				combinations=kcombinations(tuple_genes,1)
+				for kcombi in combinations:
+ 					if kcombi not in head:
+ 						print rule
+			else:
+				k = int(quantity)
+ 				combinations=kcombinations(tuple_genes,k)
+ 				for kcombi in combinations:
+ 					if kcombi in head:
+ 						print rule
+
 # @task: add support for reading filename from commandline input
 try:
 	data_file=open(data_csv_file,"rU")
@@ -128,7 +215,10 @@ try:
 	#db=[['M', 'O', 'N', 'K', 'E', 'Y'],['D', 'O', 'N', 'K', 'E', 'Y'],['M', 'A', 'K', 'E'],['M', 'U', 'C', 'K', 'Y'],['C', 'O', 'K', 'I', 'E']]
 	db=read_from_file(data_file)
 	rules=(association_rules(db,apriori_algorithm(db,min_support),min_confidence))	
-	print len(rules)	
+	#print_rules(rules)
+	line = "head has 1 of G10Down,G72UP";
+	rules_from_query(rules, line)
+	#kcombinations(('G72UP','G59UP','G96Down'),2)
 except IOError:
 	print('An error occured trying to read the file, file may not be present')
 
